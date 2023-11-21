@@ -6,7 +6,6 @@ import reactLogo from "./assets/react.svg";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
-  const [transcribeMsg, setTranscribeMsg] = useState("");
   const [name, setName] = useState("");
 
   async function greet() {
@@ -14,8 +13,8 @@ function App() {
     setGreetMsg(await invoke("greet", { name }));
   }
 
-  async function transcribe() {
-    setTranscribeMsg(await invoke("transcribe", {}));
+  async function transcribe_apple_voice_memos() {
+    await invoke("transcribe_apple_voice_memos", {});
   }
 
   return (
@@ -58,14 +57,12 @@ function App() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            transcribe();
+            transcribe_apple_voice_memos();
           }}
         >
-          <button type="submit">Transcribe</button>
+          <button type="submit">transcribe_apple_voice_memos</button>
         </form>
       </div>
-
-      <p>{transcribeMsg}</p>
     </div>
   );
 }

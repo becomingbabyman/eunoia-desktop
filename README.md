@@ -4,9 +4,11 @@
 
 At the moment eunoia-desktop transcribes your Apple Voice Memos into text locally.
 
-In the future it might support more automations to help you organize the information on your computer.
+It's only tested on mac os 14.
 
-The intent is to have an entirely local, free, composable, and open source suite of automations to help organize, categorize and search across all your data.
+In the future it might support more automations and platforms to help you organize the information on your devices.
+
+The intent is to have an entirely local, free, composable, and open source suite of automations to help organize, categorize and search across all your data without ever needing to go online.
 
 At the moment it's just a prototype.
 
@@ -21,8 +23,14 @@ The [quick start](#quick-start) will help you get it running.
 
 ## Quick start
 
+Make sure your terminal app has full disk access. E.g.
+
+System Settings.app -> Privacy & Security -> Full Disk Access -> toggle on (iTerm or your preferred terminal)
+
+Make some directories
+
 ```bash
-mkdir -p ~/eunoia/.output/Voice\ Memos
+mkdir -p ~/eunoia/*local.datoms/AppleVoiceMemos
 cd ~/eunoia
 ```
 
@@ -36,7 +44,7 @@ Install `ffmpeg` command line tool to convert media to wav for transcription
 brew install ffmpeg
 ```
 
-Make sure you've opened the Voice Memo's app on your mac at least once. This allows iCloud to sync with your other devices and download any memos to your local filesystem.
+Make sure you've opened the Voice Memo's app on your mac at least once. This allows iCloud to sync with your other devices and download any memos to your local filesystem. You may need to restart your computer before the memos show up.
 
 Build and run the Tauri app
 
@@ -54,9 +62,9 @@ transcribe fn
 - [x] create/expose a transcribe fn in rust that converts a given AV file to wav 16k and runs it through whisper base.en and saves the txt to the fs
 
 voice memos
-- [] scan the local voice memos dir in MAC OS 14 -- ~/Library/Group\ Containers/group.com.apple.VoiceMemos.shared/Recordings
+- [x] scan the local voice memos dir in MAC OS 14 -- ~/Library/Group\ Containers/group.com.apple.VoiceMemos.shared/Recordings
 - [] if the dir is empty, prompt the user to open voice memos and check their iCloud sync
-- [] transcribe all the voice memos 
+- [x] transcribe all the voice memos 
 - [] save the txt to "iCloud/eunoia/voice memos"
 - [] make a bg process to watch the VoiceMemos folder for new files and transcribe them if they're not already transcribed
 
