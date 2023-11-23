@@ -30,7 +30,7 @@ System Settings.app -> Privacy & Security -> Full Disk Access -> toggle on (iTer
 Make some directories
 
 ```bash
-mkdir -p ~/eunoia/*local.datoms/AppleVoiceMemos
+mkdir -p ~/eunoia/*local.data/AppleVoiceMemos
 cd ~/eunoia
 ```
 
@@ -65,8 +65,15 @@ voice memos
 - [x] scan the local voice memos dir in MAC OS 14 -- ~/Library/Group\ Containers/group.com.apple.VoiceMemos.shared/Recordings
 - [] if the dir is empty, prompt the user to open voice memos and check their iCloud sync
 - [x] transcribe all the voice memos 
-- [] save the txt to "iCloud/eunoia/voice memos"
-- [] make a bg process to watch the VoiceMemos folder for new files and transcribe them if they're not already transcribed
+- [x] save the txt
+- [x] make a bg process to watch the VoiceMemos folder for new/updated files and transcribe them if they're not already transcribed
+
+list/log view
+- [] list everything in *local.data/(app name)/...
+- [] sort newest to oldest
+- [] display text preview of selected file to the right like in finder
+- [] display an AV media player to the source media under the preview
+- [] link to the original txt and media files in finder
 
 videos
 - [] scan photos (folder?)
@@ -76,12 +83,16 @@ videos
 
 categorize/summarize fn
 idk, is this best done with a full LLM like llama 2 or something more specilized.
-at a high level i want to build a graph db maybe in datalevin or ideally something that plays nice with iCloud.
-it will link all voice memos, photos, videos, notes, etc in a visual and searchable graph
+at a high level i want to build a graph db. ideally something that plays nice with the filesystem and iCloud.
+it will link all voice memos, photos, videos, notes, etc in a visual and searchable graph.
+probably start with writing json to *local.data/eunoia or something along those lines
 
 search
-- [] index all the transcriptions and categories, (datalevin?)
+- [] index all the transcriptions and categories, (flexsearch?)
 - [] return results in an autocomplete list view
 
 graph
 - [] render all files in a force directed graph
+
+progress bar
+- [] render a progress bar or at least a spinner when transcribing

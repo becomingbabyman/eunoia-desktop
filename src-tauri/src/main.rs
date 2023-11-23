@@ -4,11 +4,17 @@
 use std::process::{Command, Stdio};
 use std::env;
 use std::str;
+use tauri::api::path::home_dir;
 use walkdir::WalkDir;
-use std::fs;
+use std::fs::{self, Metadata};
 use std::path::Path;
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::collections::HashSet;
+use tauri::{CustomMenuItem, SystemTray, SystemTrayMenu, SystemTrayMenuItem};
+mod watch;
+use watch::watch;
+use notify_debouncer_full::DebouncedEvent;
+use notify::event::{Event, EventKind, CreateKind, ModifyKind, MetadataKind};
+use tokio;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -16,31 +22,13 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
-fn get_updated_at_time(file_path: String) -> Option<SystemTime> {
+fn get_metadata(file_path: String) -> Option<Metadata> {
     let path = Path::new(file_path.as_str());
-
     // Attempt to retrieve the metadata of the file
     if let Ok(metadata) = fs::metadata(path) {
-        if let Ok(modified_time) = metadata.modified() {
-            return Some(modified_time);
-        }
+        return Some(metadata);
     }
-
     None
-}
-
-fn time_to_string(time: Option<SystemTime>) -> String {
-    if time.is_none() {
-        return "".to_string();
-    }
-    let duration = time.unwrap().duration_since(UNIX_EPOCH).unwrap();
-    let duration_string = duration.as_secs().to_string() + "." + &duration.subsec_nanos().to_string();
-    let ret = duration_string.replace(".", "-");
-    if ret.is_empty() {
-        return ret + "0";
-    } else {
-        return ret;
-    }
 }
 
 fn list_files_in_directory(directory_path: String) -> Vec<String> {
@@ -48,8 +36,6 @@ fn list_files_in_directory(directory_path: String) -> Vec<String> {
 
     for entry in WalkDir::new(directory_path).into_iter().filter_map(|e| e.ok()) {
         if entry.path().is_file() {
-            // let s = get_updated_at_time(entry.path().to_str().unwrap());
-            // println!("{:?}", time_to_string(s.unwrap()));
             file_paths.push(entry.file_name().to_str().unwrap().to_string());
         }
     }
@@ -57,8 +43,8 @@ fn list_files_in_directory(directory_path: String) -> Vec<String> {
     file_paths
 }
 
-async fn transcribe(media_file_path: String, output_path: String) -> String {
-    let home_dir = tauri::api::path::home_dir().unwrap().to_str().unwrap().to_string();
+async fn transcribe(media_file_path: String, output_path: String) {
+    let home_dir = home_dir().unwrap().to_str().unwrap().to_string();
     
     let ffmpeg_child = Command::new("ffmpeg")
         .arg("-i")
@@ -72,30 +58,32 @@ async fn transcribe(media_file_path: String, output_path: String) -> String {
         .spawn()                   
         .unwrap();
     let whisper_command = home_dir.clone() + "/eunoia/whisper.cpp/main";
-    let whisper_cpp_child = Command::new(whisper_command)
+    let _whisper_cpp_child = Command::new(whisper_command)
         .arg("-m")
         .arg(home_dir.clone() + "/eunoia/whisper.cpp/models/ggml-base.en.bin")
         .arg("-p")
-        .arg("2")
+        .arg("1")
         .arg("-otxt")
+        .arg("-pp")
         .arg("-of")
         .arg(output_path)
         .arg("-")
         .stdin(Stdio::from(ffmpeg_child.stdout.unwrap()))
-        .stdout(Stdio::piped())
+        .stdout(Stdio::null())
+        // .stdout(Stdio::piped())
         .spawn()
         .unwrap();
-    let output = whisper_cpp_child.wait_with_output().unwrap();
-    let result = str::from_utf8(&output.stdout).unwrap();
-    // println!("{}", result);
-    result.to_string()
+    // let output = whisper_cpp_child.wait_with_output().unwrap();
+    // let result = str::from_utf8(&output.stdout).unwrap();
+    // // println!("{}", result);
+    // result.to_string()
 }
 
 #[tauri::command]
 async fn transcribe_apple_voice_memos() {
-    let home_dir = tauri::api::path::home_dir().unwrap().to_str().unwrap().to_string();
+    let home_dir = home_dir().unwrap().to_str().unwrap().to_string();
     let voice_memos_path = home_dir.clone() + "/Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings";
-    let output_folder_path = home_dir.clone() + "/eunoia/*local.datoms/AppleVoiceMemos/";
+    let output_folder_path = home_dir.clone() + "/eunoia/*local.data/AppleVoiceMemos/";
     let voice_memo_files = list_files_in_directory(voice_memos_path.clone());
     let transcribed_files_set: HashSet<String> = list_files_in_directory(output_folder_path.clone()).iter().cloned().collect();
     for file in voice_memo_files {
@@ -106,20 +94,75 @@ async fn transcribe_apple_voice_memos() {
         }
         let file_name = file_vec.join("");  
         let file_path = voice_memos_path.clone() + "/" + &file;
-        let output_file_name = file_name + "|updated-" + &time_to_string(get_updated_at_time(file_path.clone()));
-        let output_file_name_and_ext = output_file_name.clone() + ".txt";
+        let output_file_name_and_ext = file_name.clone() + ".txt";
         if transcribed_files_set.contains(&output_file_name_and_ext) {
-            println!("Skipping {}", output_file_name_and_ext);
-            continue;
+            let file_metadata = get_metadata(file_path.clone());
+            let current_transcription_metadata = get_metadata(output_folder_path.clone() + &output_file_name_and_ext);
+            if file_metadata.unwrap().modified().unwrap() <= current_transcription_metadata.unwrap().created().unwrap() {
+                println!("Skipping {}", output_file_name_and_ext);
+                continue;
+            }
         }
-        let output_path = output_folder_path.clone() + &output_file_name;
+        let output_path = output_folder_path.clone() + &file_name;
         transcribe(file_path.clone(), output_path.clone()).await;
     }
 }
 
-fn main() {
+fn get_ext (file_name: &str) -> String {
+    let mut file_vec: Vec<&str> = file_name.split('.').collect();
+    let file_type = file_vec.pop();
+    if file_type.is_none() {
+        return "".to_string();
+    }
+    return file_type.unwrap().to_string();
+}
+
+fn on_apple_voice_memos_watch_event (event: &DebouncedEvent) {
+    match &event.event {
+        Event { kind: EventKind::Create(CreateKind::File), paths, .. } => {
+            if get_ext(paths.first().unwrap().to_str().unwrap()) == "m4a" {
+                println!("Create File {:?}", paths);
+                tokio::spawn(transcribe_apple_voice_memos());
+            }
+        },
+        Event { kind: EventKind::Modify(ModifyKind::Metadata(MetadataKind::Extended)), paths, .. } => {
+            if get_ext(paths.first().unwrap().to_str().unwrap()) == "m4a" {
+                println!("Modify File {:?}", paths);
+                tokio::spawn(transcribe_apple_voice_memos());
+            }
+        },
+        // Event { kind: EventKind::Remove(_), paths, .. } => {
+        //     println!("Remove File {:?}", paths);
+        // },
+        _ => {
+            println!("Other");
+        }
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    // Create system tray
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    let hide = CustomMenuItem::new("hide".to_string(), "Hide");
+    let tray_menu = SystemTrayMenu::new()
+    .add_item(quit)
+    .add_native_item(SystemTrayMenuItem::Separator)
+    .add_item(hide);
+    let system_tray = SystemTray::new().with_menu(tray_menu);
+
+    // Watch for file changes
+    let home_dir = home_dir().unwrap().to_str().unwrap().to_string();
+    let voice_memos_path = home_dir.clone() + "/Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings";
+    tokio::spawn(watch(voice_memos_path, on_apple_voice_memos_watch_event));
+
+    // Run all transcribers at startup to catch up on any missed files
+    tokio::spawn(transcribe_apple_voice_memos());
+ 
+    // Run Tauri application
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, transcribe_apple_voice_memos])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+    .invoke_handler(tauri::generate_handler![greet, transcribe_apple_voice_memos])
+    .system_tray(system_tray)
+    .run(tauri::generate_context!())
+    .expect("error while running tauri application");
 }
