@@ -30,7 +30,8 @@ System Settings.app -> Privacy & Security -> Full Disk Access -> toggle on (iTer
 Make some directories
 
 ```bash
-mkdir -p ~/eunoia/*local.data/AppleVoiceMemos
+mkdir -p ~/eunoia/\*local.data/AppleVoiceMemos
+mkdir -p ~/eunoia/\*local.data/ApplePhotosLibrary
 cd ~/eunoia
 ```
 
@@ -76,9 +77,9 @@ list/log view
 - [] link to the original txt and media files in finder
 
 videos
-- [] scan photos (folder?)
-- [] transcribe all videos
-- [] save the txt to "iCloud/eunoia/photos"
+- [x] scan photos (folder?)
+- [x] transcribe all videos
+- [x] save the txt
 - [] make a bg process to watch the photos folder for new videos and transcribe them if they're not already transcribed
 
 categorize/summarize fn
