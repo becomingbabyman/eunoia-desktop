@@ -16,7 +16,18 @@
       "iconAsTemplate": true
     },
     "allowlist": {
-      "all": false
+      "all": false,
+      "path": {
+        "all": true
+      },
+      "fs": {
+        "readDir": true,
+        "readFile": true,
+        "scope": [
+          "$HOME/eunoia/*local.data",
+          "$HOME/eunoia/*local.data/**"
+        ]
+      }
     },
     "bundle": {
       "active": true,
