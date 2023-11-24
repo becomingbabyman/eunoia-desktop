@@ -4,7 +4,7 @@ import "./App.css";
 
 function File({ file: { name, path, children }, depth, insertColumn, setPreview }) {
   return (
-    <div class="btn" onClick={() => !!children ? insertColumn(depth, children) : setPreview({ path })}>
+    <div className="btn" onClick={() => !!children ? insertColumn(depth, children) : setPreview({ path })}>
       {name} {children ? ">" : ""}
     </div>
   )
@@ -31,7 +31,7 @@ function Log() {
   }, [columns, setColumns, setPreview])
 
   useEffect(() => {
-    if (columns != []) return () => {}
+    if (columns.length !== 0) return () => {}
     async function fetchData() {
       const files = await readDir("eunoia/*local.data", {dir: BaseDirectory.Home, recursive: true})
       setColumns([files])
