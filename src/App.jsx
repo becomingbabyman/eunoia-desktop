@@ -13,10 +13,6 @@ function App() {
     setGreetMsg(await invoke("greet", { name }));
   }
 
-  async function transcribe_apple_voice_memos() {
-    await invoke("transcribe_apple_voice_memos", {});
-  }
-
   return (
     <div className="container">
       <h1>Welcome to Tauri!</h1>
@@ -52,17 +48,6 @@ function App() {
       </div>
       
       <p>{greetMsg}</p>
-
-      <div className="row">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            transcribe_apple_voice_memos();
-          }}
-        >
-          <button type="submit">transcribe_apple_voice_memos</button>
-        </form>
-      </div>
     </div>
   );
 }

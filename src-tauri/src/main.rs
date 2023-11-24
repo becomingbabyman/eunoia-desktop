@@ -1,9 +1,14 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::process::{Command, Stdio};
+use tokio;
+use tokio::process::Command;
+use tokio::io;
+use std::result::Result::Ok;
+use std::process::Stdio;
 use std::env;
 use std::str;
+use std::time::Instant;
 use tauri::api::path::home_dir;
 use walkdir::{WalkDir, DirEntry};
 use std::fs::{self, Metadata};
@@ -14,7 +19,6 @@ mod watch;
 use watch::watch;
 use notify_debouncer_full::DebouncedEvent;
 use notify::event::{Event, EventKind, CreateKind, ModifyKind, MetadataKind};
-use tokio;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -43,44 +47,66 @@ fn list_files_in_directory(max_depth: usize, directory_path: String) -> Vec<DirE
     file_paths
 }
 
-async fn transcribe(media_file_path: String, output_path: String) {
-    println!("Transcribing {} to {}", media_file_path, output_path);
+async fn transcribe(media_file_path: String, output_path: String) -> io::Result<()> {
+    let now_instant = Instant::now();
+    println!(">Start transcribe {}", media_file_path.clone());
     let home_dir = home_dir().unwrap().to_str().unwrap().to_string();
     
-    let ffmpeg_child = Command::new("ffmpeg")
+    let mut ffmpeg_child = Command::new("ffmpeg")
         .arg("-i")
-        .arg(media_file_path)
+        .arg(media_file_path.clone())
         .arg("-f")
         .arg("wav")
         .arg("-ar")
         .arg("16000")
+        .arg("-loglevel")
+        .arg("fatal")
         .arg("-")
         .stdout(Stdio::piped())       
-        .spawn()                   
-        .unwrap();
+        .spawn()
+        .expect("Failed to start 'ffmpeg' command");                   
     let whisper_command = home_dir.clone() + "/eunoia/whisper.cpp/main";
-    let _whisper_cpp_child = Command::new(whisper_command)
+    let mut whisper_cpp_child = Command::new(whisper_command)
         .arg("-m")
         .arg(home_dir.clone() + "/eunoia/whisper.cpp/models/ggml-base.en.bin")
         .arg("-p")
         .arg("1")
         .arg("-otxt")
-        .arg("-pp")
+        // .arg("-pp")
         .arg("-of")
-        .arg(output_path)
+        .arg(output_path.clone())
         .arg("-")
-        .stdin(Stdio::from(ffmpeg_child.stdout.unwrap()))
-        // .stdout(Stdio::null())
+        .stdin(Stdio::piped())
         // .stdout(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
-        .unwrap();
-    // let output = whisper_cpp_child.wait_with_output().unwrap();
-    // let result = str::from_utf8(&output.stdout).unwrap();
-    // // println!("{}", result);
-    // result.to_string()
+        .expect("Failed to start 'whisper.cpp' command");   
+
+    if let Some(mut ffmpeg_stdout) = ffmpeg_child.stdout.take() {
+        if let Some(mut whisper_stdin) = whisper_cpp_child.stdin.take() {
+            tokio::io::copy(&mut ffmpeg_stdout, &mut whisper_stdin).await?;
+        }
+    }
+
+    // Wait for 'ffmpeg_child' to finish
+    ffmpeg_child.wait().await?;
+
+    // Read the output of 'whisper_cpp_child'
+    let _whisper_output = whisper_cpp_child
+        .wait_with_output()
+        .await
+        .expect("Failed to read 'grep' output");
+
+    // Convert the output to a String and print it
+    // println!("Whisper output: {}", String::from_utf8_lossy(&_whisper_output.stdout));
+    println!("<End   transcribe {} {:?}", media_file_path.clone(), now_instant.elapsed());
+
+    Ok(())
 }
 
-async fn transcribe_folder(media_in_path: String, text_out_path: String, media_ext: String, max_depth: usize) {
+async fn transcribe_folder(media_in_path: String, text_out_path: String, media_ext: String, max_depth: usize) -> io::Result<()> {
+    println!(">Start transcribe_folder {} {}", media_in_path, media_ext);
     let media_in_files: HashMap<String, String> = list_files_in_directory(max_depth, media_in_path.clone()).iter().map(|dir_entry| (dir_entry.file_name().to_str().unwrap().to_string(), dir_entry.path().to_str().unwrap().to_string())).collect();
     let transcribed_files_map: HashSet<String> = list_files_in_directory(max_depth, text_out_path.clone()).iter().map(|dir_entry| dir_entry.file_name().to_str().unwrap().to_string()).collect();
     for (file, file_path) in media_in_files {
@@ -96,29 +122,33 @@ async fn transcribe_folder(media_in_path: String, text_out_path: String, media_e
             let current_transcription_metadata = get_metadata(text_out_path.clone() + &output_file_name_and_ext);
             // println!("Comparing {:?} and {:?}", file_metadata.clone().unwrap().modified().unwrap(), current_transcription_metadata.clone().unwrap().modified().unwrap());
             if file_metadata.unwrap().modified().unwrap() <= current_transcription_metadata.unwrap().modified().unwrap() {
-                println!("Skipping {}", output_file_name_and_ext);
+                println!(">   Skipping {}   <", output_file_name_and_ext);
                 continue;
             }
         }
         let output_path = text_out_path.clone() + &file_name;
-        transcribe(file_path.clone(), output_path.clone()).await;
+        let _ = transcribe(file_path.clone(), output_path.clone()).await;
     }
+    println!("<End transcribe_folder {} {}", media_in_path, media_ext);
+    Ok(())
 }
 
-#[tauri::command]
-async fn transcribe_apple_voice_memos() {
+// #[tauri::command]
+async fn transcribe_apple_voice_memos() -> io::Result<()> {
     let home_dir = home_dir().unwrap().to_str().unwrap().to_string();
     let media_in_path = home_dir.clone() + "/Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings";
     let text_out_path = home_dir.clone() + "/eunoia/*local.data/AppleVoiceMemos/";
-    transcribe_folder(media_in_path, text_out_path, "m4a".to_string(), 1).await;
+    let _ = transcribe_folder(media_in_path, text_out_path, "m4a".to_string(), 1).await;
+    Ok(())
 }
 
-#[tauri::command]
-async fn transcribe_apple_photos_library() {
+// #[tauri::command]
+async fn transcribe_apple_photos_library() -> io::Result<()> {
     let home_dir = home_dir().unwrap().to_str().unwrap().to_string();
     let media_in_path = home_dir.clone() + "/Pictures/Photos Library.photoslibrary/originals";
     let text_out_path = home_dir.clone() + "/eunoia/*local.data/ApplePhotosLibrary/";
-    transcribe_folder(media_in_path, text_out_path, "mov".to_string(), 2).await;
+    let _ = transcribe_folder(media_in_path, text_out_path, "mov".to_string(), 2).await;
+    Ok(())
 }
 
 fn get_ext (file_name: &str) -> String {
@@ -175,7 +205,7 @@ async fn main() {
  
     // Run Tauri application
     tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![greet, transcribe_apple_voice_memos])
+    .invoke_handler(tauri::generate_handler![greet])
     .system_tray(system_tray)
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
