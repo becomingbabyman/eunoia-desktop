@@ -17,6 +17,8 @@ use std::collections::{HashSet, HashMap};
 use tauri::{CustomMenuItem, SystemTray, SystemTrayMenu, SystemTrayMenuItem};
 mod watch;
 use watch::watch;
+mod show_in_folder;
+use show_in_folder::show_in_folder;
 use notify_debouncer_full::DebouncedEvent;
 use notify::event::{Event, EventKind, CreateKind, ModifyKind, MetadataKind};
 
@@ -122,7 +124,7 @@ async fn transcribe_folder(media_in_path: String, text_out_path: String, media_e
             let current_transcription_metadata = get_metadata(text_out_path.clone() + &output_file_name_and_ext);
             // println!("Comparing {:?} and {:?}", file_metadata.clone().unwrap().modified().unwrap(), current_transcription_metadata.clone().unwrap().modified().unwrap());
             if file_metadata.unwrap().modified().unwrap() <= current_transcription_metadata.unwrap().modified().unwrap() {
-                println!(">   Skipping {}   <", output_file_name_and_ext);
+                // println!(">   Skipping {}   <", output_file_name_and_ext);
                 continue;
             }
         }
@@ -205,7 +207,8 @@ async fn main() {
  
     // Run Tauri application
     tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![greet])
+    .plugin(tauri_plugin_fs_extra::init())
+    .invoke_handler(tauri::generate_handler![greet, show_in_folder])
     .system_tray(system_tray)
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

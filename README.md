@@ -71,10 +71,10 @@ voice memos
 
 list/log view
 - [x] list everything in *local.data/(app name)/...
-- [] sort newest to oldest
+- [x] sort newest to oldest
 - [x] display text preview of selected file to the right like in finder
 - [] display an AV media player to the source media under the preview
-- [] link to the original txt and media files in finder
+- [x] link to the original txt and media files in finder
 
 videos
 - [x] scan photos (folder?)

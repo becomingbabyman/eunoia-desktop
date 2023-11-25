@@ -20,6 +20,7 @@ walkdir = "2.3"
 notify = { version = "6.1.1", features = ["serde"] }
 notify-debouncer-full = { version = "*", default-features = false }
 tokio = { version = "1", features = ["full"] }
+tauri-plugin-fs-extra = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
