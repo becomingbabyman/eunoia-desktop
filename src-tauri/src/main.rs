@@ -22,12 +22,6 @@ use show_in_folder::show_in_folder;
 use notify_debouncer_full::DebouncedEvent;
 use notify::event::{Event, EventKind, CreateKind, ModifyKind, MetadataKind};
 
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 fn get_metadata(file_path: String) -> Option<Metadata> {
     let path = Path::new(file_path.as_str());
     // Attempt to retrieve the metadata of the file
@@ -211,7 +205,7 @@ async fn main() {
     // Run Tauri application
     tauri::Builder::default()
     .plugin(tauri_plugin_fs_extra::init())
-    .invoke_handler(tauri::generate_handler![greet, show_in_folder])
+    .invoke_handler(tauri::generate_handler![show_in_folder])
     .system_tray(system_tray)
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

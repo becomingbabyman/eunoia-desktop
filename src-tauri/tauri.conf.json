@@ -27,6 +27,15 @@
           "$HOME/eunoia/*local.data",
           "$HOME/eunoia/*local.data/**"
         ]
+      },
+      "protocol": {
+        "asset": true,
+        "assetScope": [
+          "$HOME/eunoia/*local.data",
+          "$HOME/eunoia/*local.data/**",
+          "$HOME/Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings/**",
+          "$HOME/Pictures/Photos Library.photoslibrary/originals/**"
+        ]
       }
     },
     "bundle": {
@@ -42,7 +51,7 @@
       "targets": "all"
     },
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost"
     },
     "updater": {
       "active": false
@@ -52,8 +61,8 @@
         "fullscreen": false,
         "resizable": true,
         "title": "eunoia-desktop",
-        "width": 800,
-        "height": 600
+        "width": 1200,
+        "height": 800
       }
     ]
   }

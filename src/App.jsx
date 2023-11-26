@@ -1,5 +1,6 @@
 import { tauri } from '@tauri-apps/api';
 import { BaseDirectory, readDir, readTextFile } from '@tauri-apps/api/fs';
+import { convertFileSrc } from '@tauri-apps/api/tauri';
 import { format } from 'date-fns';
 import { useCallback, useEffect, useState } from "react";
 import { metadata as readMeta } from "tauri-plugin-fs-extra-api";
@@ -29,6 +30,45 @@ function Column({ files, depth, insertColumn, setPreview, preview }) {
         if (file.name === ".DS_Store") return null
         return <File key={file.name} file={file} depth={depth + 1} insertColumn={insertColumn} setPreview={setPreview} preview={preview}/>
       })}
+    </div>
+  )
+}
+
+function Player({ mediaPath }) {
+  const src = convertFileSrc(mediaPath)
+  return <audio key={src} src={src} controls/>
+}
+
+const pathMap = {
+  "/eunoia/*local.data/AppleVoiceMemos": [".m4a", "/Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings"],
+  "/eunoia/*local.data/ApplePhotosLibrary": [".mov", "/Pictures/Photos Library.photoslibrary/originals"]
+}
+
+function eunoiaToOriginalPath(eunoiaPath) {
+  if (!eunoiaPath) return null
+  const corePath = Object.keys(pathMap).filter(key => eunoiaPath.includes(key))[0];
+  const rootPath = eunoiaPath.replace(".txt", pathMap[corePath][0]).replace(corePath, pathMap[corePath][1])
+  let finalPath = rootPath
+  if (finalPath.includes("Photos Library.photoslibrary")) {
+    const folder = finalPath.split("/").pop().slice(0, 1)
+    finalPath = finalPath.replace("photoslibrary/originals/", `photoslibrary/originals/${folder}/`)
+  }
+  return finalPath
+}
+
+function Preview({ preview }) {
+  const mediaPath = eunoiaToOriginalPath(preview.path)
+  return (
+    <div className='flex flex-col flex-1 h-full'>
+      {mediaPath && <>
+        <div className='flex flex-row'>
+          <Player mediaPath={mediaPath} />
+          <span className='flex items-center p-1 ml-2 cursor-alias' title='show media in finder' onClick={e => {e.preventDefault(); show_in_folder(mediaPath); return false}}>⎆</span>
+        </div>
+        <div className='flex flex-col flex-1 h-full overflow-auto'>
+          {preview.text}
+        </div>
+      </>}
     </div>
   )
 }
@@ -65,7 +105,6 @@ function Log() {
       setColumns([filesWithMeta])
     }
     fetchData()
-    return () => {}
   }, [columns, setColumns])
 
   useEffect(() => {
@@ -75,13 +114,12 @@ function Log() {
       setPreview({ ...preview, text })
     }
     fetchData()
-    return () => {}
   }, [preview, setPreview])
   
   return (
     <div className='flex flex-1 flex-row h-full'>
       {columns.map((files, i) => files && <Column key={i} files={files} depth={0} insertColumn={insertColumn} setPreview={setPreview} preview={preview} />)}
-      <div className='flex flex-col flex-1 h-full overflow-auto'>{preview.text}</div>
+      <Preview preview={preview} />
     </div>
   )
 }

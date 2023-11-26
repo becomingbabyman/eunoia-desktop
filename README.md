@@ -73,7 +73,7 @@ list/log view
 - [x] list everything in *local.data/(app name)/...
 - [x] sort newest to oldest
 - [x] display text preview of selected file to the right like in finder
-- [] display an AV media player to the source media under the preview
+- [x] display an audio player to the source media under the preview
 - [x] link to the original txt and media files in finder
 
 videos
