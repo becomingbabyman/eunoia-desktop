@@ -12,20 +12,22 @@ async function show_in_folder(path) {
 function File({ file: { name, path, children, createdAt }, depth, insertColumn, setPreview, preview }) {
   return (
     <div 
-      className={`hover:bg-blue-400 hover:text-white cursor-pointer ${preview.path?.includes(path) ? 'bg-blue-400 text-white' : ''}`}
+      className={`flex flex-row items-baseline hover:bg-blue-400 hover:text-white cursor-pointer ${preview.path?.includes(path) ? 'bg-blue-400 text-white' : ''}`}
       onClick={() => !!children ? insertColumn(depth, children) : setPreview({ path })}
     >
       <small className='p-1 font-mono'>{format(createdAt, "EEEEEE MM.dd")}</small>
       <span className='p-1'>{name}</span>
-      <span className='p-1 cursor-alias' title='show in finder' onClick={e => {e.preventDefault(); show_in_folder(path); return false}}>⎆</span>
-      {children ? "▶" : ""}
+      <span className="flex flex-auto justify-end pr-2">
+        <span className='p-1 cursor-alias' title='show in finder' onClick={e => {e.preventDefault(); show_in_folder(path); return false}}>⎆</span>
+        {children ? <span className='p-1'>&rarr;</span> : ""}
+      </span>
     </div>
   )
 }
 
 function Column({ files, depth, insertColumn, setPreview, preview }) {
   return (
-    <div className='flex flex-1 flex-col h-full overflow-auto'>
+    <div className='flex flex-1 flex-col h-full overflow-auto border-r-2'>
       {files.sort((a, b) => b.createdAt - a.createdAt).map(file => {
         if (file.name === ".DS_Store") return null
         return <File key={file.name} file={file} depth={depth + 1} insertColumn={insertColumn} setPreview={setPreview} preview={preview}/>
@@ -61,11 +63,11 @@ function Preview({ preview }) {
   return (
     <div className='flex flex-col flex-1 h-full'>
       {mediaPath && <>
-        <div className='flex flex-row'>
+        <div className='flex flex-row m-2 items-center'>
           <Player mediaPath={mediaPath} />
-          <span className='flex items-center p-1 ml-2 cursor-alias' title='show media in finder' onClick={e => {e.preventDefault(); show_in_folder(mediaPath); return false}}>⎆</span>
+          <span className='flex p-1 ml-2 cursor-alias' title='show media in finder' onClick={e => {e.preventDefault(); show_in_folder(mediaPath); return false}}>⎆</span>
         </div>
-        <div className='flex flex-col flex-1 h-full overflow-auto'>
+        <div className='flex flex-col flex-1 h-full overflow-auto p-2 m-2 mt-0 bg-slate-100 rounded'>
           {preview.text}
         </div>
       </>}
@@ -126,7 +128,7 @@ function Log() {
 
 function App() {
   return (
-    <div className="h-screen">
+    <div className="h-screen border-t-2">
       <Log />
     </div>
   )
