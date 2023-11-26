@@ -107,7 +107,7 @@ async fn transcribe(media_file_path: String, output_path: String) -> io::Result<
     Ok(())
 }
 
-async fn transcribe_folder(media_in_path: String, text_out_path: String, media_ext: String, max_depth: usize) -> io::Result<()> {
+async fn transcribe_folder(media_in_path: String, text_out_path: String, media_ext: String, max_depth: usize, min_size: u64) -> io::Result<()> {
     println!(">Start transcribe_folder {} {}", media_in_path, media_ext);
     let media_in_files: HashMap<String, String> = list_files_in_directory(max_depth, media_in_path.clone()).iter().map(|dir_entry| (dir_entry.file_name().to_str().unwrap().to_string(), dir_entry.path().to_str().unwrap().to_string())).collect();
     let transcribed_files_map: HashSet<String> = list_files_in_directory(max_depth, text_out_path.clone()).iter().map(|dir_entry| dir_entry.file_name().to_str().unwrap().to_string()).collect();
@@ -119,14 +119,17 @@ async fn transcribe_folder(media_in_path: String, text_out_path: String, media_e
         }
         let file_name = file_vec.join("");  
         let output_file_name_and_ext = file_name.clone() + ".txt";
+        let file_metadata = get_metadata(file_path.clone());
         if transcribed_files_map.contains(&output_file_name_and_ext) {
-            let file_metadata = get_metadata(file_path.clone());
             let current_transcription_metadata = get_metadata(text_out_path.clone() + &output_file_name_and_ext);
             // println!("Comparing {:?} and {:?}", file_metadata.clone().unwrap().modified().unwrap(), current_transcription_metadata.clone().unwrap().modified().unwrap());
-            if file_metadata.unwrap().modified().unwrap() <= current_transcription_metadata.unwrap().modified().unwrap() {
+            if file_metadata.as_ref().unwrap().modified().unwrap() <= current_transcription_metadata.unwrap().modified().unwrap() {
                 // println!(">   Skipping {}   <", output_file_name_and_ext);
                 continue;
             }
+        }
+        if file_metadata.as_ref().unwrap().len() < min_size {
+            continue;
         }
         let output_path = text_out_path.clone() + &file_name;
         let _ = transcribe(file_path.clone(), output_path.clone()).await;
@@ -140,7 +143,7 @@ async fn transcribe_apple_voice_memos() -> io::Result<()> {
     let home_dir = home_dir().unwrap().to_str().unwrap().to_string();
     let media_in_path = home_dir.clone() + "/Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings";
     let text_out_path = home_dir.clone() + "/eunoia/*local.data/AppleVoiceMemos/";
-    let _ = transcribe_folder(media_in_path, text_out_path, "m4a".to_string(), 1).await;
+    let _ = transcribe_folder(media_in_path, text_out_path, "m4a".to_string(), 1, 0).await;
     Ok(())
 }
 
@@ -149,7 +152,7 @@ async fn transcribe_apple_photos_library() -> io::Result<()> {
     let home_dir = home_dir().unwrap().to_str().unwrap().to_string();
     let media_in_path = home_dir.clone() + "/Pictures/Photos Library.photoslibrary/originals";
     let text_out_path = home_dir.clone() + "/eunoia/*local.data/ApplePhotosLibrary/";
-    let _ = transcribe_folder(media_in_path, text_out_path, "mov".to_string(), 2).await;
+    let _ = transcribe_folder(media_in_path, text_out_path, "mov".to_string(), 2, 9999999).await;
     Ok(())
 }
 

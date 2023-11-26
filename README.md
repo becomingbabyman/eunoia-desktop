@@ -81,10 +81,10 @@ videos
 - [x] transcribe all videos
 - [x] save the txt
 - [] make a bg process to watch the photos folder for new videos and transcribe them if they're not already transcribed
-- [] do not transcribe live photos
+- [x] do not transcribe live photos
 
 categorize/summarize fn
-idk, is this best done with a full LLM like llama 2 or something more specilized.
+idk, is this best done with a full LLM like llama 2 or something more specialized.
 at a high level i want to build a graph db. ideally something that plays nice with the filesystem and iCloud.
 it will link all voice memos, photos, videos, notes, etc in a visual and searchable graph.
 probably start with writing json to *local.data/eunoia or something along those lines
