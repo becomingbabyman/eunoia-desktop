@@ -159,23 +159,23 @@ fn get_ext (file_name: &str) -> String {
     return file_type.unwrap().to_string();
 }
 
-fn on_apple_voice_memos_watch_event (event: &DebouncedEvent) {
+fn on_watch_event<F>(event: &DebouncedEvent, ext: &str, on_event: F)
+where
+    F: Fn() + Send + 'static, // Closure is Send and 'static because it's used with tokio::spawn
+{
     match &event.event {
         Event { kind: EventKind::Create(CreateKind::File), paths, .. } => {
-            if get_ext(paths.first().unwrap().to_str().unwrap()) == "m4a" {
+            if get_ext(paths.first().unwrap().to_str().unwrap()) == ext {
                 println!("Create File {:?}", paths);
-                tokio::spawn(transcribe_apple_voice_memos());
+                on_event();
             }
         },
         Event { kind: EventKind::Modify(ModifyKind::Metadata(MetadataKind::Extended)), paths, .. } => {
-            if get_ext(paths.first().unwrap().to_str().unwrap()) == "m4a" {
+            if get_ext(paths.first().unwrap().to_str().unwrap()) == ext {
                 println!("Modify File {:?}", paths);
-                tokio::spawn(transcribe_apple_voice_memos());
+                on_event();
             }
         },
-        // Event { kind: EventKind::Remove(_), paths, .. } => {
-        //     println!("Remove File {:?}", paths);
-        // },
         _ => {
             println!("Other");
         }
@@ -196,7 +196,15 @@ async fn main() {
     // Watch for file changes
     let home_dir = home_dir().unwrap().to_str().unwrap().to_string();
     let voice_memos_path = home_dir.clone() + "/Library/Group Containers/group.com.apple.VoiceMemos.shared/Recordings";
-    tokio::spawn(watch(voice_memos_path, on_apple_voice_memos_watch_event));
+    tokio::spawn(watch(voice_memos_path, |event| {
+        on_watch_event(event, "m4a", || {
+            tokio::spawn(transcribe_apple_voice_memos());
+    })}));
+    let photos_path = home_dir.clone() + "/Pictures/Photos Library.photoslibrary/originals";
+    tokio::spawn(watch(photos_path, |event| {
+        on_watch_event(event, "mov", || {
+            tokio::spawn(transcribe_apple_photos_library());
+    })}));
 
     // Run all transcribers at startup to catch up on any missed files
     tokio::spawn(transcribe_apple_voice_memos());

@@ -75,12 +75,13 @@ list/log view
 - [x] display text preview of selected file to the right like in finder
 - [x] display an audio player to the source media under the preview
 - [x] link to the original txt and media files in finder
+- [] refresh UI when new transcriptions are added
 
 videos
 - [x] scan photos (folder?)
 - [x] transcribe all videos
 - [x] save the txt
-- [] make a bg process to watch the photos folder for new videos and transcribe them if they're not already transcribed
+- [x] make a bg process to watch the photos folder for new videos and transcribe them if they're not already transcribed
 - [x] do not transcribe live photos
 
 categorize/summarize fn

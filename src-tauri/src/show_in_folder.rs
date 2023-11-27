@@ -1,10 +1,12 @@
+#[cfg(target_os = "linux")]
 use std::fs;
 #[cfg(target_os = "linux")]
 use std::{fs::metadata, path::PathBuf};
+#[cfg(target_os = "linux")]
 use std::path::PathBuf;
-use std::process::Command;
 #[cfg(target_os = "linux")]
 use fork::{daemon, Fork}; // dep: fork = "0.1"
+use std::process::Command;
 
 #[tauri::command]
 pub fn show_in_folder(path: String) {
