@@ -23,36 +23,44 @@ The [quick start](#quick-start) will help you get it running.
 
 ## Quick start
 
-Make sure your terminal app has full disk access. E.g.
+**Make sure your terminal app has full disk access. E.g.**
 
 System Settings.app -> Privacy & Security -> Full Disk Access -> toggle on (iTerm or your preferred terminal)
 
-Make some directories
+**Make some directories**
+
+At the moment this directory structure is a requirement to simplify prototyping and avoid bundling large AI models directly into this project.
 
 ```bash
-mkdir -p ~/eunoia/\*local.data/AppleVoiceMemos
-mkdir -p ~/eunoia/\*local.data/ApplePhotosLibrary
+mkdir -p ~/eunoia/\*local.data/AppleVoiceMemos;
+mkdir -p ~/eunoia/\*local.data/ApplePhotosLibrary;
 cd ~/eunoia
 ```
 
-Clone this repo into `~/eunoia`
+**Clone this repo into `~/eunoia`**
 
-Clone [whisper.cpp](https://github.com/ggerganov/whisper.cpp#quick-start) into `~/eunoia` and follow the build instructions in their README
+**Clone [whisper.cpp](https://github.com/ggerganov/whisper.cpp#quick-start) into `~/eunoia` and follow the build instructions in their README**
 
-Install `ffmpeg` command line tool to convert media to wav for transcription
+**Install `ffmpeg` command line tool to convert media to wav for transcription**
 
 ```bash
 brew install ffmpeg
 ```
 
-Make sure you've opened the Voice Memo's app on your mac at least once. This allows iCloud to sync with your other devices and download any memos to your local filesystem. You may need to restart your computer before the memos show up.
-
-Build and run the Tauri app
+**Install `meilisearch` local search server**
 
 ```bash
-cd ~/eunoia/eunoia-desktop
-pnpm install
-pnpm tauri dev
+brew install meilisearch
+```
+
+**Make sure you've opened the Voice Memo's and Photos apps on your mac at least once.** This allows iCloud to sync with your other devices and download any memos/videos to your local filesystem. You may need to restart your computer before the files show up.
+
+**Build and run eunoia-desktop**
+
+```bash
+cd ~/eunoia/eunoia-desktop;
+pnpm install;
+pnpm eunoia
 ```
 
 ## Todo
@@ -68,6 +76,7 @@ voice memos
 - [x] transcribe all the voice memos 
 - [x] save the txt
 - [x] make a bg process to watch the VoiceMemos folder for new/updated files and transcribe them if they're not already transcribed
+- [] fix bg sync when a file is downloaded(synced) from iCloud
 
 list/log view
 - [x] list everything in *local.data/(app name)/...
@@ -91,11 +100,20 @@ it will link all voice memos, photos, videos, notes, etc in a visual and searcha
 probably start with writing json to *local.data/eunoia or something along those lines
 
 search
-- [] index all the transcriptions and categories, (flexsearch?)
-- [] return results in an autocomplete list view
+- [x] index everything in meilisearch
+- [x] return results in an autocomplete list view
 
 graph
-- [] render all files in a force directed graph
+- [] render all files in a force directed graph connected by categories
 
 progress bar
 - [] render a progress bar or at least a spinner when transcribing
+
+scripts/pipes/shortcuts/integrations
+- [] connect to apple shortcuts
+- [] on transcribe hook
+- [] on summarize/categorize hook
+- [] example pipe to notes app..
+- [] integrate n8n and/or activepieces
+- [] expose a user scripts dir
+- [] list/visualize all data pipelines
