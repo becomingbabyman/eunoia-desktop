@@ -2,7 +2,7 @@
 
 **This is project is very early in development. It comes with no guarantees.**
 
-At the moment eunoia-desktop transcribes your Apple Voice Memos into text locally.
+At the moment eunoia-desktop transcribes and indexes your Apple Voice Memos and Apple Videos into text locally.
 
 It's only tested on mac os 14.
 
@@ -72,11 +72,11 @@ transcribe fn
 
 voice memos
 - [x] scan the local voice memos dir in MAC OS 14 -- ~/Library/Group\ Containers/group.com.apple.VoiceMemos.shared/Recordings
-- [] if the dir is empty, prompt the user to open voice memos and check their iCloud sync
+- [ ] if the dir is empty, prompt the user to open voice memos and check their iCloud sync
 - [x] transcribe all the voice memos 
 - [x] save the txt
 - [x] make a bg process to watch the VoiceMemos folder for new/updated files and transcribe them if they're not already transcribed
-- [] fix bg sync when a file is downloaded(synced) from iCloud
+- [ ] fix bg sync when a file is downloaded(synced) from iCloud
 
 list/log view
 - [x] list everything in *local.data/(app name)/...
@@ -84,7 +84,7 @@ list/log view
 - [x] display text preview of selected file to the right like in finder
 - [x] display an audio player to the source media under the preview
 - [x] link to the original txt and media files in finder
-- [] refresh UI when new transcriptions are added
+- [ ] refresh UI when new transcriptions are added
 
 videos
 - [x] scan photos (folder?)
@@ -104,16 +104,16 @@ search
 - [x] return results in an autocomplete list view
 
 graph
-- [] render all files in a force directed graph connected by categories
+- [ ] render all files in a force directed graph connected by categories
 
 progress bar
-- [] render a progress bar or at least a spinner when transcribing
+- [ ] render a progress bar or at least a spinner when transcribing
 
 scripts/pipes/shortcuts/integrations
-- [] connect to apple shortcuts
-- [] on transcribe hook
-- [] on summarize/categorize hook
-- [] example pipe to notes app..
-- [] integrate n8n and/or activepieces
-- [] expose a user scripts dir
-- [] list/visualize all data pipelines
+- [ ] connect to apple shortcuts
+- [ ] on transcribe hook
+- [ ] on summarize/categorize hook
+- [ ] example pipe to notes app..
+- [ ] integrate n8n and/or activepieces
+- [ ] expose a user scripts dir
+- [ ] list/visualize all data pipelines
